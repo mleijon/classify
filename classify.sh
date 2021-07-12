@@ -3,6 +3,7 @@
 shopt -s nocaseglob
 export PATH=$PATH:$HOME/classify
 
+
 #######INPUT DATA CONTROL########
 max_size=${2:-50000000}
 if [ ! -d "$1" ]; then
@@ -43,6 +44,10 @@ if [ ! -z $2 ]; then
 fi
 ##################################
 
+if [ -d "$dir/classification" ]; then
+  rm -r $dir/classification
+fi
+mkdir $dir/classification
 for f in ${FILES[@]}; do
   base=$(basename "$f")
   ext=${f##*.}
@@ -64,12 +69,12 @@ for f in ${FILES[@]}; do
 
   if [ $file_size -le $max_size ]; then
     echo "No splitting required for: ${f/R1/R*}. Copying files..."
-    if [ -d $dir/${base%%_*} ]; then
-      rm -r $dir/${base%%_*}
+    if [ -d $dir/.${base%%_*} ]; then
+      rm -r $dir/.${base%%_*}
     fi
-    mkdir $dir/${base%%_*}
-    cp $f $dir/${base%%_*}
-    cp ${f/R1/R2} $dir/${base%%_*}
+    mkdir $dir/.${base%%_*}
+    cp $f $dir/.${base%%_*}
+    cp ${f/R1/R2} $dir/.${base%%_*}
     continue
   fi
 
@@ -88,18 +93,28 @@ for f in ${FILES[@]}; do
   ${f%%_*}'xxx'
   rev=${f/R1/R2}
   as='_'${rev#*_}
-  echo "splitting ${f/R1/R*}..."
+  FILE=${f/R1/R*}
+  FILE=${FILE##*/}
+  echo "Splitting $FILE..."
   gunzip -c ${f/R1/R2}|split -l $split_size --additional-suffix=${as%.$ext} - \
   ${rev%%_*}'xxx'
-  if [ -d $dir/${base%%_*} ]; then
-    rm -r $dir/${base%%_*}
+  if [ -d $dir/.${base%%_*} ]; then
+    rm -r $dir/.${base%%_*}
   fi
-  mkdir $dir/${base%%_*}
+  mkdir $dir/.${base%%_*}
   gzip $dir/*.fastq
-  mv $dir/*xxx* $dir/${base%%_*}
+  mv $dir/*xxx* $dir/.${base%%_*}
   cp $HOME/PycharmProjects/classify/daa2spec.py $HOME/classify/
   cp $HOME/PycharmProjects/classify/rundiam_lf.sh $HOME/classify/
-  wait;rundiam_lf.sh $dir/${base%%_*}
+  #RUNDIAM_LF
+  echo "Processing $FILE..."
+  wait;rundiam_lf.sh $dir/.${base%%_*}
+  cat $dir/.${base%%_*}/*/*.daa >> $dir/classification/${base%%_*}.daa
+  rm -r $dir/.${base%%_*}
+  #DAA2SPEC.PY
+  echo "Classifying [daa2spec.py]: $FILE"
+  wait;daa2spec.py -f $dir/classification/${base%%_*}.daa -b -s -v &>/dev/null
+  gzip $dir/classification/${base%%_*}.daa
 done
 
 
