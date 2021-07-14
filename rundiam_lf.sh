@@ -23,7 +23,7 @@ for f in ${FILES[@]}; do
   fi
   mkdir "$out_dir"
   fi_out=$out_dir/$sample_name'.fastq'
-  echo "*****part $COUNTER(${#FILES[@]})*****"
+  echo "***** part $COUNTER(${#FILES[@]}) *****"
   echo "Trimming [Trimmomatic]"
   #TRIMMOMATIC
   wait;trimmomatic PE -threads 8 -phred33 -quiet -basein "$f" -baseout \
@@ -40,8 +40,8 @@ for f in ${FILES[@]}; do
   diamin=$out_dir/$sample_name'_uq.fasta.gz'
   echo "Blasting [Diamond]"
   #DIAMOND
-  wait;diamond blastx -d $HOME/classify/dadb -q "$diamin" \
+  wait;diamond blastx -d $HOME/classify/virus_gb244 -q "$diamin" \
   -o "$out_dir/$sample_name"'.daa' --max-target-seqs 5 --evalue 1E-5 \
-  --outfmt 102 -b2 -c1 --compress 0 &>/dev/null
+  --outfmt 102 -b2 -c4 --compress 0 &>/dev/null
   let COUNTER++
 done

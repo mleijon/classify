@@ -62,7 +62,7 @@ def count_rows(fname):
         nrofreads = 0
         for i, l in enumerate(f):
             if ARGS.derep:
-                nrofreads += int(l.split(';size=')[1].split('\t')[0])
+                nrofreads += int(l.split(';size=')[1].split(';\t')[0])
     if ARGS.derep:
         i = nrofreads
         return i
@@ -79,7 +79,7 @@ def count_0and1(fname):
     with open(fname) as f:
         for row in f:
             if ARGS.derep:
-                nrofreads = int(row.split(';size=')[1].split('\t')[0])
+                nrofreads = int(row.split(';size=')[1].split(';\t')[0])
             else:
                 nrofreads = 1
             item = row.split()
@@ -109,7 +109,7 @@ def count_txclass(fname):
         for row in f:
             taxid = row.split()[1].strip()
             if ARGS.derep:
-                nrofreads = int(row.split(';size=')[1].split('\t')[0])
+                nrofreads = int(row.split(';size=')[1].split(';\t')[0])
             else:
                 nrofreads = 1
             if taxid in taxsets[ARCHAEA]:
@@ -178,12 +178,17 @@ def write_summary(fname):
         f.write('Could not be classified by db: {:>19} ({} %)\n'.format(
             nr_of_nohits[1], (round(100 * (nr_of_nohits[1] / nr_of_reads), 2))))
         f.write('\nClassified by db: {:>32} ({} %)\n'.format(
-            sum(taxcounts.values()), (round(100 * (sum(taxcounts.values()) / nr_of_reads), 2))))
-        f.write('------------------------------------------------------------\n')
+            sum(taxcounts.values()),
+            (round(100 * (sum(taxcounts.values()) / nr_of_reads), 2))))
+        f.write('------------------------------'
+                '------------------------------\n')
         f.write('Taxid deleted from db: {:>27} ({} %)\n'.format(
-            taxcounts['DELETED'], (round(100 * (taxcounts['DELETED'] / nr_of_reads), 2))))
-        f.write('CELLULAR ORGANISM: {:>31} ({} %)\n'.format(taxcounts[CELLULAR_ORGANISM], (
-            round(100 * (taxcounts[CELLULAR_ORGANISM] / nr_of_reads), 2))))
+            taxcounts['DELETED'], (
+                round(100 * (taxcounts['DELETED'] / nr_of_reads), 2))))
+        f.write('CELLULAR ORGANISM: {:>31} ({} %)\n'.
+                format(taxcounts[CELLULAR_ORGANISM],
+                       (round(100 * (taxcounts[CELLULAR_ORGANISM]
+                                     / nr_of_reads), 2))))
         f.write('ARCHAEA: {:>41} ({} %)\n'.format(taxcounts[ARCHAEA], (
             round(100 * (taxcounts[ARCHAEA] / nr_of_reads), 2))))
         f.write('BACTERIA: {:>40} ({} %)\n'.format(taxcounts[BACTERIA], (
@@ -222,7 +227,6 @@ if __name__ == "__main__":
     PARSER.add_argument('--derep', action='store_true',
                         help='switch for dereplicated reads')
     ARGS = PARSER.parse_args()
-
     sciNames = dict()
     mergedTaxids = dict()
     deletedTaxids = set()
@@ -239,39 +243,45 @@ if __name__ == "__main__":
 
     with open(ARGS.f) as f:
         for line in f:
+            nrofreads = int(line.split(';size=')[1].split(';\t')[0])
             item = line.split()[1].strip()
             if item != '0':
                 if item in mergedTaxids.keys():
                     if mergedTaxids[item] in taxsets[ARCHAEA]:
-                        results[ARCHAEA] += [sciNames[mergedTaxids[item]]]
+                        results[ARCHAEA] += nrofreads*[
+                            sciNames[mergedTaxids[item]]]
                     elif mergedTaxids[item] in taxsets[BACTERIA]:
-                        results[BACTERIA] += [sciNames[mergedTaxids[item]]]
+                        results[BACTERIA] += nrofreads*[
+                            sciNames[mergedTaxids[item]]]
                     elif mergedTaxids[item] in taxsets[EUCARYOTA]:
-                        results[EUCARYOTA] += [sciNames[mergedTaxids[item]]]
+                        results[EUCARYOTA] += nrofreads*[
+                            sciNames[mergedTaxids[item]]]
                     elif mergedTaxids[item] in taxsets[VIRUSES]:
-                        results[VIRUSES] += [sciNames[mergedTaxids[item]]]
+                        results[VIRUSES] += nrofreads*[
+                            sciNames[mergedTaxids[item]]]
                     elif mergedTaxids[item] in taxsets[UNCLASSIFIED]:
-                        results[UNCLASSIFIED] += [sciNames[mergedTaxids[item]]]
+                        results[UNCLASSIFIED] += nrofreads*[
+                            sciNames[mergedTaxids[item]]]
                     elif mergedTaxids[item] in taxsets[OTHERSEQ]:
-                        results[OTHERSEQ] += [sciNames[mergedTaxids[item]]]
+                        results[OTHERSEQ] += nrofreads*[
+                            sciNames[mergedTaxids[item]]]
                 elif item in deletedTaxids:
                     results['DELETED'] += [item + ' :deleted']
                 else:
                     if item in taxsets[ARCHAEA]:
-                        results[ARCHAEA] += [sciNames[item]]
+                        results[ARCHAEA] += nrofreads*[sciNames[item]]
                     elif item in taxsets[BACTERIA]:
-                        results[BACTERIA] += [sciNames[item]]
+                        results[BACTERIA] += nrofreads*[sciNames[item]]
                     elif item in taxsets[EUCARYOTA]:
-                        results[EUCARYOTA] += [sciNames[item]]
+                        results[EUCARYOTA] += nrofreads*[sciNames[item]]
                     elif item in taxsets[VIRUSES]:
-                        results[VIRUSES] += [sciNames[item]]
+                        results[VIRUSES] += nrofreads*[sciNames[item]]
                     elif item in taxsets[UNCLASSIFIED]:
-                        results[UNCLASSIFIED] += [sciNames[item]]
+                        results[UNCLASSIFIED] += nrofreads*[sciNames[item]]
                     elif item in taxsets[OTHERSEQ]:
-                        results[OTHERSEQ] += [sciNames[item]]
-    basename = ARGS.f.split('daa')[0]
+                        results[OTHERSEQ] += nrofreads*[sciNames[item]]
+    basename = ARGS.f.split('.daa')[0]
     if ARGS.a:
-        print(basename)
         with open(basename + '_archaea.txt', 'w') as f:
             f.write('{:<80}{}'.format('ARCHAEA', 'Nr of reads\n'))
             for item in Counter(results[ARCHAEA]).most_common():
