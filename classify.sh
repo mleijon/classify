@@ -43,18 +43,18 @@ if [ ! -z $2 ]; then
   esac
 fi
 ##################################
-
-if [ -d "$dir/classification" ]; then
-  rm -r $dir/classification
+OUTDIR=$dir/classification
+if [ -d $OUTDIR ]; then
+  rm -r $OUTDIR
 fi
-mkdir $dir/classification
+mkdir $OUTDIR
 for f in ${FILES[@]}; do
   base=$(basename "$f")
   ext=${f##*.}
-    if [ -d $dir/.${base%%_*} ]; then
-    rm -r $dir/.${base%%_*}
+    if [ -d $OUTDIR/.${base%%_*} ]; then
+    rm -r $OUTDIR/.${base%%_*}
   fi
-  mkdir $dir/.${base%%_*}
+  mkdir $OUTDIR/.${base%%_*}
   nr_lines=$(gunzip -c $f|wc -l)
   nr_reads=$((nr_lines/4))
   file_size_fwd=$(wc -c $f)
@@ -73,15 +73,14 @@ for f in ${FILES[@]}; do
     file_size=$file_size_fwd
   fi
 
-
   if [ $file_size -le $max_size ]; then
     echo "No splitting required for: ${f/R1/R*}. Copying files..."
-    if [ -d $dir/.${base%%_*} ]; then
-      rm -r $dir/.${base%%_*}
+    if [ -d $OUTDIR/.${base%%_*} ]; then
+      rm -r $OUTDIR/.${base%%_*}
     fi
-    mkdir $dir/.${base%%_*}
-    cp $f $dir/.${base%%_*}
-    cp ${f/R1/R2} $dir/.${base%%_*}
+    mkdir $OUTDIR/.${base%%_*}
+    cp $f $OUTDIR/.${base%%_*}
+    cp ${f/R1/R2} $OUTDIR/.${base%%_*}
   else
     if [ ! $((file_size%max_size)) -eq 0 ]; then
       nr_files=$((file_size/max_size + 1))
@@ -94,29 +93,28 @@ for f in ${FILES[@]}; do
     fi
     split_size=$((4*(nr_reads/nr_files + nr_reads%nr_files)))
     as='_'${f#*_}
-    gunzip -c $f|split -l $split_size --additional-suffix=${as%.$ext} - \
-    ${f%%_*}'xxx'
+    echo "Splitting $FILE..."
+    gunzip -c $f|split -l $split_size --filter='gzip > $FILE.gz' \
+    --additional-suffix=${as%.$ext} - ${f%%_*}'xxx'
     rev=${f/R1/R2}
     as='_'${rev#*_}
-    echo "Splitting $FILE..."
-    gunzip -c ${f/R1/R2}|split -l $split_size --additional-suffix=${as%.$ext} - \
-    ${rev%%_*}'xxx'
-    gzip $dir/*.fastq
-    mv $dir/*xxx* $dir/.${base%%_*}
+    gunzip -c ${f/R1/R2}|split -l $split_size --filter='gzip > $FILE.gz' \
+     --additional-suffix=${as%.$ext} - ${rev%%_*}'xxx'
+    mv $dir/*xxx* $OUTDIR/.${base%%_*}
   fi
 
   cp $HOME/PycharmProjects/classify/daa2spec.py $HOME/classify/
   cp $HOME/PycharmProjects/classify/rundiam_lf.sh $HOME/classify/
   #RUNDIAM_LF
   echo "Processing $FILE..."
-  wait;rundiam_lf.sh $dir/.${base%%_*}
-  cat $dir/.${base%%_*}/*/*.daa >> $dir/classification/${base%%_*}.daa
-  rm -r $dir/.${base%%_*}
+  wait;rundiam_lf.sh $OUTDIR/.${base%%_*}
+  cat $OUTDIR/.${base%%_*}/*/*.daa >> $OUTDIR/${base%%_*}.daa
+  #rm -r $OUTDIR/.${base%%_*}
   #DAA2SPEC.PY
   echo "Classifying [daa2spec.py]"
-  wait;daa2spec.py -f $dir/classification/${base%%_*}.daa -b -s -v --derep\
+  wait;daa2spec.py -f $OUTDIR/${base%%_*}.daa -b -s -v --derep\
   &>/dev/null
-  gzip $dir/classification/${base%%_*}.daa
+  gzip $OUTDIR/${base%%_*}.daa
 done
 
 
