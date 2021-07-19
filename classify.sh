@@ -51,10 +51,10 @@ mkdir $OUTDIR
 for f in ${FILES[@]}; do
   base=$(basename "$f")
   ext=${f##*.}
-    if [ -d $OUTDIR/.${base%%_*} ]; then
-    rm -r $OUTDIR/.${base%%_*}
+    if [ -d $OUTDIR/${base%%_*} ]; then
+    rm -r $OUTDIR/${base%%_*}
   fi
-  mkdir $OUTDIR/.${base%%_*}
+  mkdir $OUTDIR/${base%%_*}
   nr_lines=$(gunzip -c $f|wc -l)
   nr_reads=$((nr_lines/4))
   file_size_fwd=$(wc -c $f)
@@ -75,12 +75,12 @@ for f in ${FILES[@]}; do
 
   if [ $file_size -le $max_size ]; then
     echo "No splitting required for: ${f/R1/R*}. Copying files..."
-    if [ -d $OUTDIR/.${base%%_*} ]; then
-      rm -r $OUTDIR/.${base%%_*}
+    if [ -d $OUTDIR/${base%%_*} ]; then
+      rm -r $OUTDIR/${base%%_*}
     fi
-    mkdir $OUTDIR/.${base%%_*}
-    cp $f $OUTDIR/.${base%%_*}
-    cp ${f/R1/R2} $OUTDIR/.${base%%_*}
+    mkdir $OUTDIR/${base%%_*}
+    cp $f $OUTDIR/${base%%_*}
+    cp ${f/R1/R2} $OUTDIR/${base%%_*}
   else
     if [ ! $((file_size%max_size)) -eq 0 ]; then
       nr_files=$((file_size/max_size + 1))
@@ -100,20 +100,24 @@ for f in ${FILES[@]}; do
     as='_'${rev#*_}
     gunzip -c ${f/R1/R2}|split -l $split_size --filter='gzip > $FILE.gz' \
      --additional-suffix=${as%.$ext} - ${rev%%_*}'xxx'
-    mv $dir/*xxx* $OUTDIR/.${base%%_*}
+    mv $dir/*xxx* $OUTDIR/${base%%_*}
   fi
 
   cp $HOME/PycharmProjects/classify/daa2spec.py $HOME/classify/
   cp $HOME/PycharmProjects/classify/rundiam_lf.sh $HOME/classify/
   #RUNDIAM_LF
   echo "Processing $FILE..."
-  wait;rundiam_lf.sh $OUTDIR/.${base%%_*}
-  cat $OUTDIR/.${base%%_*}/*/*.daa >> $OUTDIR/${base%%_*}.daa
-  #rm -r $OUTDIR/.${base%%_*}
+  wait;rundiam_lf.sh $OUTDIR/${base%%_*}
+  rm $OUTDIR/${base%%_*}/*.gz
+  #cat $OUTDIR/${base%%_*}/*/*.gz >> $OUTDIR/${base%%_*}_uq.fasta.gz
+  cat $OUTDIR/${base%%_*}/*/*.daa >> $OUTDIR/${base%%_*}.daa
+  #rm -r $OUTDIR/${base%%_*}
+
   #DAA2SPEC.PY
   echo "Classifying [daa2spec.py]"
   wait;daa2spec.py -f $OUTDIR/${base%%_*}.daa -b -s -v --derep\
   &>/dev/null
+  gzip $OUTDIR/${base%%_*}/*/*.daa
   gzip $OUTDIR/${base%%_*}.daa
 done
 

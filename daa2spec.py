@@ -249,37 +249,43 @@ if __name__ == "__main__":
                 if item in mergedTaxids.keys():
                     if mergedTaxids[item] in taxsets[ARCHAEA]:
                         results[ARCHAEA] += nrofreads*[
-                            sciNames[mergedTaxids[item]]]
+                            sciNames[mergedTaxids[item]] + ' (' + item + ')']
                     elif mergedTaxids[item] in taxsets[BACTERIA]:
                         results[BACTERIA] += nrofreads*[
-                            sciNames[mergedTaxids[item]]]
+                            sciNames[mergedTaxids[item]] + ' (' + item + ')']
                     elif mergedTaxids[item] in taxsets[EUCARYOTA]:
                         results[EUCARYOTA] += nrofreads*[
-                            sciNames[mergedTaxids[item]]]
+                            sciNames[mergedTaxids[item]] + ' (' + item + ')']
                     elif mergedTaxids[item] in taxsets[VIRUSES]:
                         results[VIRUSES] += nrofreads*[
-                            sciNames[mergedTaxids[item]]]
+                            sciNames[mergedTaxids[item]] + ' (' + item + ')']
                     elif mergedTaxids[item] in taxsets[UNCLASSIFIED]:
                         results[UNCLASSIFIED] += nrofreads*[
-                            sciNames[mergedTaxids[item]]]
+                            sciNames[mergedTaxids[item]] + ' (' + item + ')']
                     elif mergedTaxids[item] in taxsets[OTHERSEQ]:
                         results[OTHERSEQ] += nrofreads*[
-                            sciNames[mergedTaxids[item]]]
+                            sciNames[mergedTaxids[item]] + ' (' + item + ')']
                 elif item in deletedTaxids:
                     results['DELETED'] += [item + ' :deleted']
                 else:
                     if item in taxsets[ARCHAEA]:
-                        results[ARCHAEA] += nrofreads*[sciNames[item]]
+                        results[ARCHAEA] += nrofreads*[sciNames[item]
+                                                       + ' (' + item + ')']
                     elif item in taxsets[BACTERIA]:
-                        results[BACTERIA] += nrofreads*[sciNames[item]]
+                        results[BACTERIA] += nrofreads*[sciNames[item]
+                                                        + ' (' + item + ')']
                     elif item in taxsets[EUCARYOTA]:
-                        results[EUCARYOTA] += nrofreads*[sciNames[item]]
+                        results[EUCARYOTA] += nrofreads*[sciNames[item]
+                                                         + ' (' + item + ')']
                     elif item in taxsets[VIRUSES]:
-                        results[VIRUSES] += nrofreads*[sciNames[item]]
+                        results[VIRUSES] += nrofreads*[sciNames[item]
+                                                       + ' (' + item + ')']
                     elif item in taxsets[UNCLASSIFIED]:
-                        results[UNCLASSIFIED] += nrofreads*[sciNames[item]]
+                        results[UNCLASSIFIED] += nrofreads*[sciNames[item]
+                                                            + ' (' + item + ')']
                     elif item in taxsets[OTHERSEQ]:
-                        results[OTHERSEQ] += nrofreads*[sciNames[item]]
+                        results[OTHERSEQ] += nrofreads*[sciNames[item]
+                                                        + ' (' + item + ')']
     basename = ARGS.f.split('.daa')[0]
     if ARGS.a:
         with open(basename + '_archaea.txt', 'w') as f:
