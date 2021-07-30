@@ -2,13 +2,11 @@
 
 import argparse
 import os
-import re
+import regex as re
 from fasta import FastaList
 
 
-def create_filter(seq, direction):
-    min_length = ARGS.m
-    opt_count = len(seq) - min_length
+def create_filter(seq):
     seq = seq.lower()
     filt = ''
     count = 0
@@ -40,41 +38,40 @@ def create_filter(seq, direction):
             filt += '[acgt]'
         else:
             exit('Error in primer sequence')
-        if direction == 'fwd':
-            if count <= opt_count:
-                filt += '?'
-            else:
-                pass
-        elif direction == 'rev':
-            if count > min_length:
-                filt += '?'
-            else:
-                pass
-        else:
-            exit('Primer direction error')
+    filt = '(' + filt + ')'
+    if ARGS.fuzzy_match:
+        filt += '{s<=' + ARGS.fuzzy_match + '}'
     return filt
 
 
 def make_pattern_sets():
     primers = FastaList(os.path.join(ARGS.d, 'filter.fa'))
-    primer_set1 = [primers.seq_list[0].split()[1].lower()]
-    primer_set1 += [primers.seq_list_revc()[1].split()[1].lower()]
-    patter_set1 = []
-    direction = 'fwd'
-    for primer in primer_set1:
-        patter_set1 += [re.compile(create_filter(primer, direction))]
-        direction = 'rev'
-    primer_set2 = [primers.seq_list[1].split()[1].lower()]
-    primer_set2 += [primers.seq_list_revc()[0].split()[1].lower()]
-    pattern_set2 = []
-    direction = 'fwd'
-    for primer in primer_set2:
-        pattern_set2 += [re.compile(create_filter(primer, direction))]
-        direction = 'rev'
-    pattern_sets = []
-    pattern_sets += [patter_set1]
-    pattern_sets += [pattern_set2]
-    return pattern_sets
+    fwd_primer = primers.seq_list[0].split()[1]
+    rev_primer = primers.seq_list[1].split()[1]
+    if not ARGS.m:
+        crop_fwd = 0
+        crop_rev = 0
+    else:
+        pattern_size = ARGS.m
+        if pattern_size >= min(len(fwd_primer), len(rev_primer)):
+            exit('pattern-size larger than primer length')
+        crop_fwd = len(fwd_primer) - pattern_size
+        crop_rev = len(rev_primer) - pattern_size
+    primer_set = [primers.seq_list[0].split()[1].lower()[crop_fwd:]]
+    primer_set += [primers.seq_list_revc()[1].split()[1].lower()[crop_rev:]]
+    pattern_pairs = []
+    pattern_pair = []
+    for primer in primer_set:
+        pattern_pair += [re.compile(create_filter(primer))]
+    pattern_pairs += [pattern_pair]
+    if ARGS.reverse_patterns:
+        pattern_pair = []
+        primer_set = [primers.seq_list[1].split()[1].lower()[crop_rev:]]
+        primer_set += [primers.seq_list_revc()[0].split()[1].lower()[crop_fwd:]]
+        for primer in primer_set:
+            pattern_pair += [re.compile(create_filter(primer))]
+        pattern_pairs += [pattern_pair]
+    return pattern_pairs
 
 
 if __name__ == "__main__":
@@ -94,10 +91,18 @@ if __name__ == "__main__":
                         required=True)
     PARSER.add_argument('-m', type=int, help='The minimum nr of matching'
                                              'nucleotides required for a match',
-                        default=10, required=False)
+                        required=False)
+    PARSER.add_argument('--amplicon_fasta', action='store_true',
+                        help='switch for export of amplicon fasta files')
+    PARSER.add_argument('--reverse_patterns', action='store_true',
+                        help='switch for including the reverse primer pattern')
+    PARSER.add_argument('--fuzzy_match', type=str,
+                        help='switch for including the reverse primer pattern',
+                        required=False)
     ARGS = PARSER.parse_args()
     # Check files
     if os.path.isfile(os.path.join(ARGS.d, 'filter.fa')):
+        primer_list = FastaList(os.path.join(ARGS.d, 'filter.fa'))
         patterns = make_pattern_sets()
     else:
         exit('filter-file not found')
@@ -111,9 +116,13 @@ if __name__ == "__main__":
         for sample in samples:
             inp_file = os.path.join(ARGS.d, sample + '_sel_txids.fasta')
             for item in FastaList(inp_file).seq_list:
-                seq = item.split()[1].lower()
+                seq = item.split('\n')[1].lower()
+                print(seq)
                 for pattern_set in patterns:
+                    print(pattern_set)
                     for primer_pattern in pattern_set:
-                        print(primer_pattern)
-                        print(seq)
-                        print(primer_pattern.search(seq))
+                        for primer in primer_pattern.finditer(seq,
+                                                              overlapped=False):
+                            print('Primer: {}; Mismatches: {}; Location: {}'.
+                                  format(primer.group(), primer.fuzzy_counts[0],
+                                         primer.span()))
