@@ -6,11 +6,11 @@ import regex as re
 from fasta import FastaList
 
 
-def create_filter(seq):
-    seq = seq.lower()
+def create_filter(prm):
+    prm = prm.lower()
     filt = ''
     count = 0
-    for char in seq:
+    for char in prm:
         count += 1
         if char in ['a', 'c', 'g', 't']:
             filt += char
@@ -74,55 +74,83 @@ def make_pattern_sets():
     return pattern_pairs
 
 
-if __name__ == "__main__":
-    PARSER = argparse.ArgumentParser(description='New filter fasta-file will be'
-                                                 ' created containing only '
-                                                 'sequence with the sub-'
-                                                 'sequences listed in a filter-'
-                                                 'file. The directory given by'
-                                                 'the -d option should contain'
-                                                 'fasta-files from '
-                                                 'taxid2seqs.py and a filter '
-                                                 'file named "filter". The '
-                                                 'output files wil be tagged'
-                                                 'with "_filt"')
-    PARSER.add_argument('-d', type=str, help='directory containing input data'
-                                             'and teh "filter"-file',
-                        required=True)
-    PARSER.add_argument('-m', type=int, help='The minimum nr of matching'
-                                             'nucleotides required for a match',
-                        required=False)
-    PARSER.add_argument('--amplicon_fasta', action='store_true',
-                        help='switch for export of amplicon fasta files')
-    PARSER.add_argument('--reverse_patterns', action='store_true',
-                        help='switch for including the reverse primer pattern')
-    PARSER.add_argument('--fuzzy_match', type=str,
-                        help='switch for including the reverse primer pattern',
-                        required=False)
-    ARGS = PARSER.parse_args()
-    # Check files
-    if os.path.isfile(os.path.join(ARGS.d, 'filter.fa')):
-        primer_list = FastaList(os.path.join(ARGS.d, 'filter.fa'))
-        patterns = make_pattern_sets()
-    else:
-        exit('filter-file not found')
-    samples = list()
-    for file in os.listdir(ARGS.d):
-        if file.endswith("sel_txids.fasta"):
-            samples.append(file.split('_')[0])
-    if not samples:
-        exit('No input fasta-files found')
-    else:
-        for sample in samples:
-            inp_file = os.path.join(ARGS.d, sample + '_sel_txids.fasta')
+PARSER = argparse.ArgumentParser(description='New filter fasta-file will be'
+                                             ' created containing only '
+                                             'sequence with the sub-'
+                                             'sequences listed in a filter-'
+                                             'file. The directory given by'
+                                             'the -d option should contain'
+                                             'fasta-files from '
+                                             'taxid2seqs.py and a filter '
+                                             'file named "filter". The '
+                                             'output files wil be tagged'
+                                             'with "_filt"')
+PARSER.add_argument('-d', type=str, help='directory containing input data'
+                                         'and teh "filter"-file',
+                    required=True)
+PARSER.add_argument('-m', type=int, help='The minimum nr of matching'
+                                         'nucleotides required for a match',
+                    required=False)
+# TBD
+# PARSER.add_argument('--amplicon_fasta', action='store_true',
+#                     help='switch for export of amplicon fasta files')
+PARSER.add_argument('--hits', action='store_true',
+                    help='switch for creating a primer hit list')
+PARSER.add_argument('--reverse_patterns', action='store_true',
+                    help='switch for including the reverse primer pattern')
+PARSER.add_argument('--fuzzy_match', type=str,
+                    help='switch for including the reverse primer pattern',
+                    required=False)
+ARGS = PARSER.parse_args()
+# Check files
+patterns = list()
+if os.path.isfile(os.path.join(ARGS.d, 'filter.fa')):
+    primer_list = FastaList(os.path.join(ARGS.d, 'filter.fa'))
+    patterns = make_pattern_sets()
+else:
+    exit('filter-file not found')
+samples = list()
+for file in os.listdir(ARGS.d):
+    if file.endswith("_filt.fasta"):
+        os.remove(os.path.join(ARGS.d, file))
+for file in os.listdir(ARGS.d):
+    if file.endswith(".fasta"):
+        samples.append(file.split('.')[0])
+if not samples:
+    exit('No input fasta-files found')
+else:
+    for sample in samples:
+        inp_file = os.path.join(ARGS.d, sample + '.fasta')
+        out_file = os.path.join(ARGS.d, sample + '_filt.fasta')
+
+        if ARGS.hits:
+            hit_file = os.path.join(ARGS.d, sample + '_hit.list')
+            h = open(hit_file, 'w')
+        filtered_seqs = set()
+        with open(out_file, 'w') as f:
             for item in FastaList(inp_file).seq_list:
                 seq = item.split('\n')[1].lower()
-                print(seq)
+                seq_id = item.split('\n')[0]
+                directions = set()
                 for pattern_set in patterns:
-                    print(pattern_set)
+                    hitlist = list()
+                    direc = 'fwd'
                     for primer_pattern in pattern_set:
-                        for primer in primer_pattern.finditer(seq,
-                                                              overlapped=False):
-                            print('Primer: {}; Mismatches: {}; Location: {}'.
-                                  format(primer.group(), primer.fuzzy_counts[0],
-                                         primer.span()))
+                        for p in primer_pattern.finditer(
+                                seq, overlapped=False):
+                            directions.add(direc)
+                            hitlist.append((p.group(),
+                                            p.fuzzy_counts[0],
+                                            p.span()))
+                        direc = 'rev'
+                    if len(directions) == 2:
+                        filtered_seqs.add(item)
+                if ARGS.hits:
+                    h.write(seq_id + '\n')
+                    for hit in hitlist:
+                        h.write('{}: mismatches: {}; span: {}\n'
+                                .format(hit[0], hit[1], hit[2]))
+            for item in filtered_seqs:
+                f.write(item)
+        if ARGS.hits:
+            h.close()
