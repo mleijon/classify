@@ -7,7 +7,7 @@ export PATH=$PATH:$HOME/classify
 #######INPUT DATA CONTROL########
 max_size=${2:-50000000}
 if [ ! -d "$1" ]; then
-  echo "Please enter the full path to the directory containing the sequencing\
+  echo "Enter the full path to the directory containing the sequencing \
 data as argument."
   exit 0
 else
@@ -51,7 +51,7 @@ mkdir $OUTDIR
 for f in ${FILES[@]}; do
   base=$(basename "$f")
   ext=${f##*.}
-    if [ -d $OUTDIR/${base%%_*} ]; then
+      if [ -d $OUTDIR/${base%%_*} ]; then
     rm -r $OUTDIR/${base%%_*}
   fi
   mkdir $OUTDIR/${base%%_*}
@@ -92,12 +92,12 @@ for f in ${FILES[@]}; do
       exit
     fi
     split_size=$((4*(nr_reads/nr_files + nr_reads%nr_files)))
-    as='_'${f#*_}
+    as='_'${base#*_}
     echo "Splitting $FILE..."
     gunzip -c $f|split -l $split_size --filter='gzip > $FILE.gz' \
     --additional-suffix=${as%.$ext} - ${f%%_*}'xxx'
     rev=${f/R1/R2}
-    as='_'${rev#*_}
+    as=${as/R1/R2}
     gunzip -c ${f/R1/R2}|split -l $split_size --filter='gzip > $FILE.gz' \
      --additional-suffix=${as%.$ext} - ${rev%%_*}'xxx'
     mv $dir/*xxx* $OUTDIR/${base%%_*}
@@ -115,7 +115,7 @@ for f in ${FILES[@]}; do
 
   #DAA2SPEC.PY
   echo "Classifying [daa2spec.py]"
-  wait;daa2spec.py -f $OUTDIR/${base%%_*}.daa -b -s -v --derep\
+  wait;daa2spec.py -f $OUTDIR/${base%%_*}.daa -a -b -s -e -u -o -d -v --derep\
   &>/dev/null
   gzip $OUTDIR/${base%%_*}/*/*.daa
   gzip $OUTDIR/${base%%_*}.daa
