@@ -50,6 +50,7 @@ fi
 mkdir $OUTDIR
 for f in ${FILES[@]}; do
   base=$(basename "$f")
+  sample=${base%%_*}
   ext=${f##*.}
       if [ -d $OUTDIR/${base%%_*} ]; then
     rm -r $OUTDIR/${base%%_*}
@@ -59,8 +60,8 @@ for f in ${FILES[@]}; do
   nr_reads=$((nr_lines/4))
   file_size_fwd=$(wc -c $f)
   file_size_fwd=${file_size_fwd% *}
-  FILE=${f/R1/R*}
-  FILE=${FILE##*/}
+  fil=${f/R1/R*}
+  fil=${fil##*/}
   if [ ! -f ${f/R1/R2} ]; then
     echo "No reverse file: ${f/R1/R2}. Skipping this sample."
     continue
@@ -93,20 +94,19 @@ for f in ${FILES[@]}; do
     fi
     split_size=$((4*(nr_reads/nr_files + nr_reads%nr_files)))
     as='_'${base#*_}
-    echo "Splitting $FILE..."
+    echo "Splitting $fil..."
     gunzip -c $f|split -l $split_size --filter='gzip > $FILE.gz' \
-    --additional-suffix=${as%.$ext} - ${f%%_*}'xxx'
-    rev=${f/R1/R2}
+    --additional-suffix=${as%.$ext} - $dir'/'$sample'xxx'
     as=${as/R1/R2}
     gunzip -c ${f/R1/R2}|split -l $split_size --filter='gzip > $FILE.gz' \
-     --additional-suffix=${as%.$ext} - ${rev%%_*}'xxx'
+    --additional-suffix=${as%.$ext} - $dir'/'$sample'xxx'
     mv $dir/*xxx* $OUTDIR/${base%%_*}
   fi
 
   cp $HOME/PycharmProjects/classify/daa2spec.py $HOME/classify/
   cp $HOME/PycharmProjects/classify/rundiam_lf.sh $HOME/classify/
   #RUNDIAM_LF
-  echo "Processing $FILE..."
+  echo "Processing $fil..."
   wait;rundiam_lf.sh $OUTDIR/${base%%_*}
   rm $OUTDIR/${base%%_*}/*.gz
   #cat $OUTDIR/${base%%_*}/*/*.gz >> $OUTDIR/${base%%_*}_uq.fasta.gz
