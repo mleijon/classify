@@ -136,6 +136,10 @@ else:
                     hitlist = list()
                     direc = 'fwd'
                     for primer_pattern in pattern_set:
+                        print(patterns)
+                        print(pattern_set)
+                        print(primer_pattern)
+                        exit()
                         for p in primer_pattern.finditer(
                                 seq, overlapped=False):
                             directions.add(direc)
@@ -145,11 +149,11 @@ else:
                         direc = 'rev'
                     if len(directions) == 2:
                         filtered_seqs.add(item)
-                if ARGS.hits:
-                    h.write(seq_id + '\n')
-                    for hit in hitlist:
-                        h.write('{}: mismatches: {}; span: {}\n'
-                                .format(hit[0], hit[1], hit[2]))
+                        if ARGS.hits:
+                            h.write(seq_id + '\n')
+                            for hit in hitlist:
+                                h.write('{}: mismatches: {}; span: {}\n'
+                                        .format(hit[0], hit[1], hit[2]))
             for item in filtered_seqs:
                 f.write(item)
         if ARGS.hits:
