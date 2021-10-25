@@ -86,7 +86,7 @@ PARSER = argparse.ArgumentParser(description='New filter fasta-file will be'
                                              'output files wil be tagged'
                                              'with "_filt"')
 PARSER.add_argument('-d', type=str, help='directory containing input data'
-                                         'and teh "filter"-file',
+                                         'and the "filter"-file',
                     required=True)
 PARSER.add_argument('-m', type=int, help='The minimum nr of matching'
                                          'nucleotides required for a match',
