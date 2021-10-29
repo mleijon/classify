@@ -48,12 +48,13 @@ def make_pattern_sets():
     primers = FastaList(os.path.join(ARGS.d, 'filter.fa'))
     fwd_primer = primers.seq_list[0].split()[1]
     rev_primer = primers.seq_list[1].split()[1]
+
     if not ARGS.m:
         crop_fwd = 0
         crop_rev = 0
     else:
         pattern_size = ARGS.m
-        if pattern_size >= min(len(fwd_primer), len(rev_primer)):
+        if pattern_size > min(len(fwd_primer), len(rev_primer)):
             exit('pattern-size larger than primer length')
         crop_fwd = len(fwd_primer) - pattern_size
         crop_rev = len(rev_primer) - pattern_size
@@ -136,10 +137,6 @@ else:
                     hitlist = list()
                     direc = 'fwd'
                     for primer_pattern in pattern_set:
-                        print(patterns)
-                        print(pattern_set)
-                        print(primer_pattern)
-                        exit()
                         for p in primer_pattern.finditer(
                                 seq, overlapped=False):
                             directions.add(direc)
