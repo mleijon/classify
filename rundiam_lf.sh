@@ -40,8 +40,8 @@ for f in ${FILES[@]}; do
   diamin=$out_dir/$sample_name'_uq.fasta.gz'
   echo "Blasting [Diamond]"
   #DIAMOND
-  wait;diamond blastx -d /ssd2/diamondDB/nr -q "$diamin" \
+  wait;diamond blastx -d /mnt/e/classify/nr -q "$diamin" \
   -o "$out_dir/$sample_name"'.daa' --max-target-seqs 5 --evalue 1E-5 \
-  --outfmt 102 -b14 -c1 --compress 0 &>/dev/null
+  --outfmt 102 -b8 -c2 --compress 0 &>/dev/null
   let COUNTER++
 done

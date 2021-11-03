@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s nocaseglob
-export PATH=$PATH:$HOME/classify
+export PATH=$PATH:/mnt/e/classify
 
 
 #######INPUT DATA CONTROL########
@@ -103,8 +103,8 @@ for f in ${FILES[@]}; do
     mv $dir/*xxx* $OUTDIR/${base%%_*}
   fi
 
-  cp $HOME/PycharmProjects/classify/daa2spec.py $HOME/classify/
-  cp $HOME/PycharmProjects/classify/rundiam_lf.sh $HOME/classify/
+  cp $HOME/PycharmProjects/classify/daa2spec.py /mnt/e/classify/
+  cp $HOME/PycharmProjects/classify/rundiam_lf.sh /mnt/e/classify/
   #RUNDIAM_LF
   echo "Processing $fil..."
   wait;rundiam_lf.sh $OUTDIR/${base%%_*}
