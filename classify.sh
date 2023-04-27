@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s nocaseglob
-export PATH=$PATH:/mnt/e/classify
+export PATH=$PATH:/ssd2/classify
 
 
 #######INPUT DATA CONTROL########
@@ -48,7 +48,7 @@ if [ -d $OUTDIR ]; then
   rm -r $OUTDIR
 fi
 mkdir $OUTDIR
-for f in ${FILES[@]}; do
+for f in "${FILES[@]}"; do
   base=$(basename "$f")
   sample=${base%%_*}
   ext=${f##*.}
@@ -103,8 +103,8 @@ for f in ${FILES[@]}; do
     mv $dir/*xxx* $OUTDIR/${base%%_*}
   fi
 
-  cp $HOME/PycharmProjects/classify/daa2spec.py /mnt/e/classify/
-  cp $HOME/PycharmProjects/classify/rundiam_lf.sh /mnt/e/classify/
+  cp $HOME/PycharmProjects/classify/daa2spec.py /ssd2/classify/
+  cp $HOME/PycharmProjects/classify/rundiam_lf.sh /ssd2/classify/
   #RUNDIAM_LF
   echo "Processing $fil..."
   wait;rundiam_lf.sh $OUTDIR/${base%%_*}

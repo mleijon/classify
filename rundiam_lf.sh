@@ -1,7 +1,7 @@
 #!/bin/bash
 
 usearch='usearch11.0.667_i86linux64'
-export PATH=$PATH:$HOME/classify
+export PATH=$PATH:/ssd2/classify
 
 if [ ! -d "$1" ]; then
   echo "Please enter the full path to the directory containing the sequencing\
@@ -40,8 +40,8 @@ for f in ${FILES[@]}; do
   diamin=$out_dir/$sample_name'_uq.fasta.gz'
   echo "Blasting [Diamond]"
   #DIAMOND
-  wait;diamond blastx -d /mnt/e/classify/nr -q "$diamin" \
+  wait;diamond blastx -d /ssd2/classify/nr -q "$diamin" \
   -o "$out_dir/$sample_name"'.daa' --max-target-seqs 5 --evalue 1E-5 \
-  --outfmt 102 -b8 -c2 --compress 0 &>/dev/null
+  --outfmt 102 -b16 -c1 --compress 0 &>/dev/null
   let COUNTER++
 done
